@@ -14,10 +14,10 @@ ideally we can remove this patch once mojo errors are not so prevalent or if
 upstream walks back this change.
 
 diff --git a/content/gpu/gpu_child_thread.cc b/content/gpu/gpu_child_thread.cc
-index d0191a497b54d50be9a62b68393b6bd3e75ddd7d..3ebe3e3a2bb7ab9948075b5738c5ffcabe60d0dd 100644
+index b088d9de38e2511c209a52779e8d2869fc0a4222..b2e8198e98fb1cb686ec33028fa6174e404df428 100644
 --- a/content/gpu/gpu_child_thread.cc
 +++ b/content/gpu/gpu_child_thread.cc
-@@ -69,8 +69,8 @@ namespace {
+@@ -68,8 +68,8 @@ namespace {
  // Called when the GPU process receives a bad IPC message.
  void HandleBadMessage(const std::string& error) {
    LOG(ERROR) << "Mojo error in GPU process: " << error;
