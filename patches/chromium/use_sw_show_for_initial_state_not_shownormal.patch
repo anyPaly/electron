@@ -7,10 +7,10 @@ This allows ui::SHOW_STATE_DEFAULT to be used to show a window without
 altering its tiling or maximize state.
 
 diff --git a/ui/views/widget/desktop_aura/desktop_window_tree_host_win.cc b/ui/views/widget/desktop_aura/desktop_window_tree_host_win.cc
-index 9949d73b85b5110711689c5ee3f8ba1a493cc976..540ca59a1fd02006f494857e1fb74e207cee366c 100644
+index c3ab16a0923f38080ef753f137a315151194ba30..377039e39f7d47e3db0bcc7a19604e23cb5e1932 100644
 --- a/ui/views/widget/desktop_aura/desktop_window_tree_host_win.cc
 +++ b/ui/views/widget/desktop_aura/desktop_window_tree_host_win.cc
-@@ -853,7 +853,7 @@ bool DesktopWindowTreeHostWin::IsModal() const {
+@@ -851,7 +851,7 @@ bool DesktopWindowTreeHostWin::IsModal() const {
  }
  
  int DesktopWindowTreeHostWin::GetInitialShowState() const {
