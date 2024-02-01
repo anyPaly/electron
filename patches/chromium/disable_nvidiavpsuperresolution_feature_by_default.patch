@@ -1,0 +1,20 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mark Harmer <mark.harmer@discordapp.com>
+Date: Thu, 1 Feb 2024 12:06:18 -0800
+Subject: Disable NvidiaVpSuperResolution feature by default
+
+Disabling this until it can be fully tested in the discord app.
+
+diff --git a/ui/gl/gl_switches.cc b/ui/gl/gl_switches.cc
+index 7f21bafaa791a209527098341909925e0b1fd4df..331f381b036f44ea9a6e79edcb5510ae5e09dd63 100644
+--- a/ui/gl/gl_switches.cc
++++ b/ui/gl/gl_switches.cc
+@@ -243,7 +243,7 @@ BASE_FEATURE(kIntelVpSuperResolution,
+ // Allow overlay swapchain to use NVIDIA video processor for super resolution.
+ BASE_FEATURE(kNvidiaVpSuperResolution,
+              "NvidiaVpSuperResolution",
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Allow overlay swapchain to use NVIDIA video processor for trueHDR.
+ BASE_FEATURE(kNvidiaVpTrueHDR,
