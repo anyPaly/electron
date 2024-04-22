@@ -4,3 +4,4 @@ don_t_remove_obj_files_from_the_build_that_we_need.patch
 add_discord_ffmpeg_config_options.patch
 revert_revert_bsf_use_standard_include_paths.patch
 configure_separate_subsystem_for_immersive_audio_model.patch
+roll_ffmpeg.patch
