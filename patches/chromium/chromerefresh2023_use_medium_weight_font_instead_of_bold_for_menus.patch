@@ -1,0 +1,284 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: David Pennington <dpenning@chromium.org>
+Date: Sat, 27 Apr 2024 07:11:42 +0000
+Subject: Use medium weight font instead of bold for menus.
+
+Bug: 41496332
+Change-Id: Ide2e893a72225e02bf25321b96755df797a2a546
+Reviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/5479732
+Reviewed-by: Allen Bauer <kylixrd@chromium.org>
+Commit-Queue: David Pennington <dpenning@chromium.org>
+Cr-Commit-Position: refs/heads/main@{#1293379}
+
+diff --git a/ui/views/controls/menu/menu_config.cc b/ui/views/controls/menu/menu_config.cc
+index f4f11a761fb0ea67b6da8cfbfa38feebba594266..83c7f06f1b2361585a7968f8bb20daacaa7c8552 100644
+--- a/ui/views/controls/menu/menu_config.cc
++++ b/ui/views/controls/menu/menu_config.cc
+@@ -15,8 +15,8 @@
+ namespace views {
+ 
+ MenuConfig::MenuConfig() {
+-  Init();
+-  InitCR2023();
++  InitCommon();
++  InitPlatform();
+ }
+ 
+ MenuConfig::~MenuConfig() = default;
+@@ -49,13 +49,9 @@ bool MenuConfig::ShouldShowAcceleratorText(const MenuItemView* item,
+   return true;
+ }
+ 
+-void MenuConfig::InitCR2023() {
+-  if (!features::IsChromeRefresh2023()) {
+-    return;
+-  }
+-
+-  font_list = TypographyProvider::Get().GetFont(style::CONTEXT_MENU,
+-                                                style::STYLE_BODY_3_EMPHASIS);
++void MenuConfig::InitCommon() {
++  context_menu_font_list = font_list = TypographyProvider::Get().GetFont(
++      style::CONTEXT_MENU, style::STYLE_BODY_3);
+   reserve_dedicated_arrow_column = false;
+   menu_horizontal_border_size = 0;
+   submenu_horizontal_overlap = 0;
+@@ -65,8 +61,6 @@ void MenuConfig::InitCR2023() {
+   separator_height = 17;
+   separator_spacing_height = 4;
+   use_outer_border = false;
+-
+-  InitPlatformCR2023();
+ }
+ 
+ // static
+diff --git a/ui/views/controls/menu/menu_config.h b/ui/views/controls/menu/menu_config.h
+index 0cd9d09be241e01523dfccb2a02e3de2de49727f..b087f25b78c946ce18cb8d20e02ae39ac07be71d 100644
+--- a/ui/views/controls/menu/menu_config.h
++++ b/ui/views/controls/menu/menu_config.h
+@@ -43,10 +43,6 @@ struct VIEWS_EXPORT MenuConfig {
+   bool ShouldShowAcceleratorText(const MenuItemView* item_view,
+                                  std::u16string* text) const;
+ 
+-  // Initialize menu config for CR2023
+-  void InitCR2023();
+-  void InitPlatformCR2023();
+-
+   // Font lists used by menus.
+   gfx::FontList font_list;
+   gfx::FontList context_menu_font_list;
+@@ -229,8 +225,13 @@ struct VIEWS_EXPORT MenuConfig {
+   bool use_bubble_border = false;
+ 
+  private:
+-  // Configures a MenuConfig as appropriate for the current platform.
+-  void Init();
++  // Set configuration as appropriate for the current platform. Called after
++  // InitCommon to make sure that fonts are correct or that other settings are
++  // overridden from their defaults.
++  void InitPlatform();
++
++  // Set default configuration that is shared by all platforms.
++  void InitCommon();
+ };
+ 
+ }  // namespace views
+diff --git a/ui/views/controls/menu/menu_config_chromeos.cc b/ui/views/controls/menu/menu_config_chromeos.cc
+index 66969afee92012f488a0b5f1f3769d497580ba07..aec943d2667931ff79daf907e90c0f8bb41e7a32 100644
+--- a/ui/views/controls/menu/menu_config_chromeos.cc
++++ b/ui/views/controls/menu/menu_config_chromeos.cc
+@@ -4,28 +4,8 @@
+ 
+ #include "ui/views/controls/menu/menu_config.h"
+ 
+-#include "ui/base/ui_base_features.h"
+-
+ namespace views {
+ 
+-void MenuConfig::Init() {
+-  if (!features::IsChromeRefresh2023()) {
+-    arrow_to_edge_padding = 21;              // Undesirable in CR2023.
+-    corner_radius = 2;                       // Overridden in CR2023.
+-    minimum_text_item_height = 29;           // Undesirable in CR2023.
+-    minimum_container_item_height = 29;      // Undesirable in CR2023.
+-    reserve_dedicated_arrow_column = false;  // Default in CR2023.
+-    menu_horizontal_border_size = 0;         // Default in CR2023.
+-    separator_lower_height = 8;              // Unused in CR2023.
+-    separator_spacing_height = 7;            // Overridden in CR2023.
+-    separator_upper_height = 8;              // Unused in CR2023.
+-    submenu_horizontal_overlap = 1;          // Overridden in CR2023.
+-    use_outer_border = false;                // Default in CR2023.
+-  }
+-}
+-
+-void MenuConfig::InitPlatformCR2023() {
+-  context_menu_font_list = font_list;
+-}
++void MenuConfig::InitPlatform() {}
+ 
+ }  // namespace views
+diff --git a/ui/views/controls/menu/menu_config_fuchsia.cc b/ui/views/controls/menu/menu_config_fuchsia.cc
+index c8057d0d575cdca92fa7480c8f707d37d09560aa..a8de032a27bdadd2cba7adcd94fbd2e59fb0ed22 100644
+--- a/ui/views/controls/menu/menu_config_fuchsia.cc
++++ b/ui/views/controls/menu/menu_config_fuchsia.cc
+@@ -6,10 +6,6 @@
+ 
+ namespace views {
+ 
+-void MenuConfig::Init() {}
+-
+-void MenuConfig::InitPlatformCR2023() {
+-  context_menu_font_list = font_list;
+-}
++void MenuConfig::InitPlatform() {}
+ 
+ }  // namespace views
+diff --git a/ui/views/controls/menu/menu_config_linux.cc b/ui/views/controls/menu/menu_config_linux.cc
+index a32b05f3acabcb502b992360d680706e3497e98c..7bd7c44ffc72492331d7a912c5e90dc6fa52223d 100644
+--- a/ui/views/controls/menu/menu_config_linux.cc
++++ b/ui/views/controls/menu/menu_config_linux.cc
+@@ -4,19 +4,11 @@
+ 
+ #include "ui/views/controls/menu/menu_config.h"
+ 
+-#include "ui/base/ui_base_features.h"
+ #include "ui/ozone/public/ozone_platform.h"
+ 
+ namespace views {
+ 
+-void MenuConfig::Init() {
+-  if (!features::IsChromeRefresh2023()) {
+-    arrow_to_edge_padding = 6;
+-  }
+-}
+-
+-void MenuConfig::InitPlatformCR2023() {
+-  context_menu_font_list = font_list;
++void MenuConfig::InitPlatform() {
+   use_bubble_border =
+       ui::OzonePlatform::GetInstance()->IsWindowCompositingSupported();
+ }
+diff --git a/ui/views/controls/menu/menu_config_mac.mm b/ui/views/controls/menu/menu_config_mac.mm
+index 5ffaa55f0f4da5372df439c84c1de092f149db46..eabfb364890d3869776e252ecda254f13a0081e0 100644
+--- a/ui/views/controls/menu/menu_config_mac.mm
++++ b/ui/views/controls/menu/menu_config_mac.mm
+@@ -4,55 +4,14 @@
+ 
+ #include "ui/views/controls/menu/menu_config.h"
+ 
+-#import <AppKit/AppKit.h>
+-
+-#include "base/mac/mac_util.h"
+-#include "ui/base/ui_base_features.h"
+-#include "ui/gfx/platform_font_mac.h"
+-
+-namespace {
+-
+-void InitMaterialMenuConfig(views::MenuConfig* config) {
+-  // These config parameters are from https://crbug.com/829347 and the spec
+-  // images linked from that bug.
+-  config->submenu_horizontal_overlap = 0;
+-  config->minimum_text_item_height = 28;
+-  config->minimum_container_item_height = 40;
+-  config->arrow_to_edge_padding = 16;
+-  config->separator_height = 9;
+-  config->separator_lower_height = 4;
+-  config->separator_upper_height = 4;
+-  config->separator_spacing_height = 5;
+-  config->separator_thickness = 1;
+-  config->reserve_dedicated_arrow_column = false;
+-  config->icons_in_label = true;
+-  config->icon_label_spacing = 8;
+-  config->corner_radius = 8;
+-  config->auxiliary_corner_radius = 4;
+-  config->item_horizontal_border_padding = 0;
+-}
+-
+-}  // namespace
+-
+ namespace views {
+ 
+-void MenuConfig::Init() {
+-  context_menu_font_list = font_list = gfx::FontList(gfx::Font(
+-      new gfx::PlatformFontMac(gfx::PlatformFontMac::SystemFontType::kMenu)));
++void MenuConfig::InitPlatform() {
+   check_selected_combobox_item = true;
+   arrow_key_selection_wraps = false;
+   use_mnemonics = false;
+   show_context_menu_accelerators = false;
+   all_menus_use_prefix_selection = true;
+-  menu_horizontal_border_size = 0;
+-  use_outer_border = false;
+-  if (!features::IsChromeRefresh2023()) {
+-    InitMaterialMenuConfig(this);
+-  }
+-}
+-
+-void MenuConfig::InitPlatformCR2023() {
+-  context_menu_font_list = font_list;
+ }
+ 
+ }  // namespace views
+diff --git a/ui/views/controls/menu/menu_config_win.cc b/ui/views/controls/menu/menu_config_win.cc
+index 21c757f76f7a0ef42e2b86c3c5557f3d209251ac..a2dae078ccbd334efc02ed201c2685f2a9e919b3 100644
+--- a/ui/views/controls/menu/menu_config_win.cc
++++ b/ui/views/controls/menu/menu_config_win.cc
+@@ -8,14 +8,11 @@
+ 
+ #include <Vssym32.h>
+ 
+-#include "base/metrics/histogram_macros.h"
+-#include "base/win/windows_version.h"
+-#include "ui/base/ui_base_features.h"
+ #include "ui/gfx/system_fonts_win.h"
+ 
+ namespace views {
+ 
+-void MenuConfig::Init() {
++void MenuConfig::InitPlatform() {
+   context_menu_font_list = font_list =
+       gfx::FontList(gfx::win::GetSystemFont(gfx::win::SystemFont::kMenu));
+ 
+@@ -25,43 +22,10 @@ void MenuConfig::Init() {
+        show_cues == TRUE);
+ 
+   SystemParametersInfo(SPI_GETMENUSHOWDELAY, 0, &show_delay, 0);
+-
+-  bool is_win11 = base::win::GetVersion() >= base::win::Version::WIN11;
+-  bool is_refresh = features::IsChromeRefresh2023();
+   separator_upper_height = 5;
+   separator_lower_height = 7;
+ 
+-  if (!is_refresh) {
+-    if (is_win11) {
+-      corner_radius = 8;
+-      menu_horizontal_border_size = 4;
+-      submenu_horizontal_overlap = 1;
+-      rounded_menu_vertical_border_size = 4;
+-      item_horizontal_padding = 12;
+-      between_item_vertical_padding = 2;
+-      separator_height = 1;
+-      separator_upper_height = 1;
+-      separator_lower_height = 1;
+-      item_corner_radius = 4;
+-    } else {
+-      menu_horizontal_border_size = 3;
+-      nonrounded_menu_vertical_border_size = 3;
+-      item_vertical_margin = 3;
+-      item_horizontal_border_padding = -2;
+-      icon_label_spacing = 10;
+-      always_reserve_check_region = true;
+-      separator_height = 7;
+-      separator_upper_height = 5;
+-      separator_lower_height = 5;
+-    }
+-  }
+-
+   use_bubble_border = corner_radius > 0;
+ }
+ 
+-void MenuConfig::InitPlatformCR2023() {
+-  // No platform specific CR2023 initialization needed.
+-  // context_menu_font_list will use the default Windows system menu font.
+-}
+-
+ }  // namespace views
