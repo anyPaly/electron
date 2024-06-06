@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mark Harmer <mark.harmer@discordapp.com>
+Date: Wed, 5 Jun 2024 22:26:35 -0700
+Subject: fix: workaround Electron bug with frame eviction
+
+https://github.com/electron/electron/issues/42378
+
+diff --git a/content/browser/renderer_host/render_widget_host_view_aura.cc b/content/browser/renderer_host/render_widget_host_view_aura.cc
+index a68019420d1a30c276a048bf770158a55f7dbe1b..9e3ae3905027ccbc5f862fd7fcfd75d5a725c645 100644
+--- a/content/browser/renderer_host/render_widget_host_view_aura.cc
++++ b/content/browser/renderer_host/render_widget_host_view_aura.cc
+@@ -553,15 +553,17 @@ void RenderWidgetHostViewAura::ShowImpl(PageVisibilityState page_visibility) {
+   // OnShowWithPageVisibility will not call NotifyHostAndDelegateOnWasShown,
+   // which updates `visibility_`, unless the host is hidden. Make sure no update
+   // is needed.
+-  if (host_->is_hidden() || visibility_ == Visibility::VISIBLE)
++  if (host_->is_hidden() || host()->disable_hidden_ ||
++      visibility_ == Visibility::VISIBLE) {
+     OnShowWithPageVisibility(page_visibility);
++  }
+ }
+ 
+ void RenderWidgetHostViewAura::NotifyHostAndDelegateOnWasShown(
+     blink::mojom::RecordContentToVisibleTimeRequestPtr tab_switch_start_state) {
+   DCHECK(delegated_frame_host_) << "Cannot be invoked during destruction.";
+-  DCHECK(host_->is_hidden());
+-  DCHECK_NE(visibility_, Visibility::VISIBLE);
++  // DCHECK(host_->is_hidden());
++  // DCHECK_NE(visibility_, Visibility::VISIBLE);
+ 
+   auto* wth = window()->GetHost();
+   if (wth && !wth->window()->GetLocalSurfaceId().is_valid()) {
+diff --git a/content/browser/renderer_host/render_widget_host_view_base.cc b/content/browser/renderer_host/render_widget_host_view_base.cc
+index 390a8b4870326083d33a37c8f6cd3e13ff57b4ed..5be45dc41dcb2a2948485b57247db5d17d20ce7f 100644
+--- a/content/browser/renderer_host/render_widget_host_view_base.cc
++++ b/content/browser/renderer_host/render_widget_host_view_base.cc
+@@ -1084,7 +1084,7 @@ void RenderWidgetHostViewBase::OnShowWithPageVisibility(
+   const bool web_contents_is_visible =
+       page_visibility == PageVisibilityState::kVisible;
+ 
+-  if (host_->is_hidden()) {
++  if (host_->is_hidden() || host()->disable_hidden_) {
+     // If the WebContents is becoming visible, ask the compositor to report the
+     // visibility time for metrics. Otherwise the widget is being rendered even
+     // though the WebContents is hidden or occluded, for example due to being
